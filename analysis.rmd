@@ -1,0 +1,195 @@
+---
+title: "Predicting League of Legends Win rate"
+date: October, 2022
+---
+
+# Introduction
+
+
+# Dataset
+[Provider](https://www.kaggle.com/datasets/junhachoi/all-ranked-solo-games-on-kr-server-24-hours?select=sat+df.csv)
+
+# Prepare all the package
+```{r}
+library(tidyverse)
+library(tidymodels)
+library(corrplot)
+library(discrim)
+library(poissonreg)
+library(corrr)
+library(klaR)
+library(vroom)
+tidymodels_prefer()
+```
+
+# Exploratory Data analysis
+## Pre EDA
+As the author of the dataset suggests, the orginal encoding is cp949 (korean encoding). So it is wise to convert it to UTF-8 first to avoid encoding issue
+
+Here I use the `iconv` command line tool to change the encoding
+```bash
+iconv -f cp949 -t utf-8 league_data.csv > league_data_utf8.csv
+```
+
+## Explaination of variables in the dataset
+Variables of interest
+- KoreanTime: local game time in UTC+9
+- championName: factor ()
+- championRole
+
+Variables of interest that cannot be fully determined during game preparation stage 
+- teamId: 100 (blue team), 200 (red team), system randomly assigned team id. since the game map is not entirely symmetrical, blue and team have some minor differences.
+- gameEndedInEarlySurrender: True/False, indicating if one team surrendered before 20 minutes
+- gameEndedInSurrender:  True/False, indicating if the game is ended with one team surrendered before the winning condition is met
+- teamEarlySurrendered: True/False
+- visionScore: Numeric, indicating how much pro/counter-reconnaissance action player performed to get more map information for the team (may vary depends on role, support/jg commonly have higher vision score)
+- timePlayed: Numeric, total time played in seconds
+
+Other variables will not be considered as they cannot be determined during game prepare stage.
+- totalDamagedDealt: Numeric, indicating total damage value dealt on opponent champions, minions and neutral entity
+- totalDamageTaken: Numeric, indicating total damage value taken by the player champion
+- totalHeal: Numeric, indicating total health point healed on players champion
+- totalMinionsKilled: Numeric, indicating total opponent and neutral minions killed
+- totalTimeCCDealt: Numeric, indicating total control (make enemy unable to attack for a period of time) time
+- totalTimeSpentDead: 
+
+## Loading the dataset
+```{r}
+# league_all_df <- read.csv("dataset/league_data_tail_10k_utf8.csv")
+# league_all_df <- read.csv("dataset/league_data_10k_utf8.csv")
+
+league_all_df <- vroom("dataset/league_data_utf8.csv")
+# Drop all the irrelevant columns
+
+```
+```{r}
+# Drop variables
+league_all_df <- league_all_df %>%
+    select(
+        -c(summonerName,
+        puuid,
+        summonerId,
+        ))
+```
+
+Give a list of variables and check for missing data
+```{r}
+head(league_all_df)
+sum(is.na(league_all_df))
+```
+
+
+## Remove invalid games
+Remake can be made under 3 minutes if one or more player is disconnected from the game in the first 1:30 minutes
+- these game will not provide meaningful information to the model
+- however, the game can still run for a period of time after remake voting is passed
+- so to be safe, use 5 minutes as boundary
+```{r}
+league_all_df <- league_all_df %>%
+    filter(timePlayed > 360)
+dim(league_all_df)
+```
+
+## Conversion and Factor
+Convert local time to the time of the day
+```{r}
+# Level: Morning (6-12), Afternoon(12-18), Evening(18-24), Midnight(0-6)
+
+
+
+league_all_df <- league_all_df %>%
+    mutate(
+        Hour = strptime(league_all_df$KoreanTime, "%Y-%m-%d %H:%M:%S")$hour)
+
+
+head(league_all_df$Hour,n = 20)
+league_all_df <- league_all_df %>%
+    mutate(TimeOfTheDay = case_when(
+           between(Hour, 0, 6) ~ "PostMidnight",
+           between(Hour, 7, 12) ~ "Morning",
+           between(Hour, 13, 18) ~ "Afternoon",
+           between(Hour, 18, 24) ~ "Evening",))
+
+league_all_df <- league_all_df %>%
+    mutate(team = case_when(
+        teamId == "100" ~ "Blue",
+        teamId == "200" ~ "Red",
+    ))
+```
+
+```{r, warning=FALSE}
+league_all_df_factored <- league_all_df %>%
+    mutate(
+        across(c(
+            win,
+            gameEndedInEarlySurrender,
+            gameEndedInSurrender,
+            teamEarlySurrendered),
+        as.numeric))
+
+league_all_df_factored <- league_all_df_factored %>%
+    mutate(
+        across(
+            c(
+                teamPosition,
+                TimeOfTheDay,
+                championName),
+            as.factor)
+    )
+head(league_all_df_factored$TimeOfTheDay)
+
+league_all_df_factored$TimeOfTheDay <- fct_relevel(
+    league_all_df$TimeOfTheDay,
+    c("PostMidnight", "Morning", "Afternoon", "Evening"))
+
+league_all_df_factored$team <- fct_relevel(league_all_df$team, c("Blue", "Red"))
+head(league_all_df_factored$Hour)
+```
+
+## Explore the distribution
+```{r}
+head(league_all_df_factored)
+league_all_numeric <- league_all_df_factored %>%
+    select(where(is.numeric)|where(is.factor)) %>%
+    select(-c(gameNo,
+    playerNo,
+    participantId,
+    teamId,
+    unrealKills,
+    teamEarlySurrendered,
+    gameEndedInEarlySurrender))
+
+league_all_numeric <- league_all_numeric %>%
+    mutate(TimeOfTheDayN = as.numeric(TimeOfTheDay))
+
+league_all_df_factored %>%
+    filter(win == 1) %>%
+    ggplot(aes(y = win, fill = team)) +
+    geom_bar() +
+    coord_polar() +
+    scale_fill_manual(values=c("blue", "red")) +
+    ggtitle("Team blue vs team red win rate")
+
+head(league_all_numeric$Hour, n=20)
+correlation <- league_all_numeric %>% correlate()
+correlation %>%
+  stretch() %>%
+  ggplot(aes(x, y, fill = r)) +
+  geom_tile() +
+  geom_text(aes(label = as.character(fashion(r)))) +
+  scale_fill_gradient2(low = "red", mid="white", high = "blue") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+```
+
+# Logistic regression
+```{r}
+df_split <- initial_split(league_all_df_factored, prop = 0.7, strata = win)
+league_train <- training(df_split)
+league_testing <- testing(df_split)
+```
+
+```{r}
+log_reg <- logistic_reg() %>%
+    set_engine("glm")
+    set_mode("classification")
+```
