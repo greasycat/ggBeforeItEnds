@@ -58,10 +58,14 @@ Other variables will not be considered as they cannot be determined during game 
 # league_all_df <- read.csv("dataset/league_data_tail_10k_utf8.csv")
 # league_all_df <- read.csv("dataset/league_data_10k_utf8.csv")
 
-league_all_df <- vroom("dataset/league_data_utf8.csv")
+league_all_df <- vroom("dataset/league_data_10k_utf8.csv")
 # Drop all the irrelevant columns
+# summoner_names <- unique(league_all_df$summonerId)
+# dim(league_all_df)
+# length((summoner_names))
 
 ```
+
 ```{r}
 # Drop variables
 league_all_df <- league_all_df %>%
@@ -76,6 +80,11 @@ Give a list of variables and check for missing data
 ```{r}
 head(league_all_df)
 sum(is.na(league_all_df))
+names(which(colSums(is.na(league_all_df)) > 0))
+row_with_na <- league_all_df %>% filter(is.na(teamPosition))
+dim(row_with_na)
+View(row_with_na)
+league_all_df <- league_all_df %>% filter(!is.na(teamPosition))
 ```
 
 
@@ -108,7 +117,7 @@ league_all_df <- league_all_df %>%
            between(Hour, 0, 6) ~ "PostMidnight",
            between(Hour, 7, 12) ~ "Morning",
            between(Hour, 13, 18) ~ "Afternoon",
-           between(Hour, 18, 24) ~ "Evening",))
+           between(Hour, 18, 24) ~ "Evening"))
 
 league_all_df <- league_all_df %>%
     mutate(team = case_when(
@@ -118,32 +127,48 @@ league_all_df <- league_all_df %>%
 ```
 
 ```{r, warning=FALSE}
-league_all_df_factored <- league_all_df %>%
-    mutate(
-        across(c(
-            win,
-            gameEndedInEarlySurrender,
-            gameEndedInSurrender,
-            teamEarlySurrendered),
-        as.numeric))
+# league_all_df_factored <- league_all_df %>%
+#     mutate(
+#         across(c(
+#             gameEndedInEarlySurrender,
+#             gameEndedInSurrender,
+#             teamEarlySurrendered),
+#         as.numeric))
 
-league_all_df_factored <- league_all_df_factored %>%
+league_all_df_factored <- league_all_df %>%
     mutate(
         across(
             c(
+                win,
+                gameEndedInEarlySurrender,
+                gameEndedInSurrender,
+                teamEarlySurrendered,
                 teamPosition,
                 TimeOfTheDay,
                 championName),
             as.factor)
     )
-head(league_all_df_factored$TimeOfTheDay)
+levels(league_all_df_factored$win)
+
+league_all_df_factored <- league_all_df_factored %>%
+    mutate(across(
+            c(
+                win,
+                gameEndedInEarlySurrender,
+                gameEndedInSurrender,
+                teamEarlySurrendered
+            ),
+            ~fct_relevel(., c("TRUE", "FALSE"))))
+
 
 league_all_df_factored$TimeOfTheDay <- fct_relevel(
     league_all_df$TimeOfTheDay,
     c("PostMidnight", "Morning", "Afternoon", "Evening"))
 
 league_all_df_factored$team <- fct_relevel(league_all_df$team, c("Blue", "Red"))
-head(league_all_df_factored$Hour)
+
+# head(league_all_df_factored$Hour)
+# head(league_all_df_factored$TimeOfTheDay)
 ```
 
 ## Explore the distribution
@@ -181,15 +206,72 @@ correlation %>%
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 ```
 
+```{r}
+View(head(league_all_df_factored, n=60))
+# Generate a table of champion compo for each team
+team_compo <- league_all_df_factored %>%
+    select(no, team, teamPosition, championName) %>%
+    pivot_wider(names_from = c(teamPosition, team),
+        values_from = championName,
+    )
+team_compo
+# Join the compo by no
+league_all_df_factored <-
+    left_join(league_all_df_factored, team_compo, by = "no")
+
+league_all_df_factored <- league_all_df_factored %>%
+    drop_na()
+
+dim(league_all_df_factored)
+View(head(league_all_df_factored, n=60))
+```
+
 # Logistic regression
 ```{r}
 df_split <- initial_split(league_all_df_factored, prop = 0.7, strata = win)
 league_train <- training(df_split)
 league_testing <- testing(df_split)
+
 ```
 
 ```{r}
-log_reg <- logistic_reg() %>%
-    set_engine("glm")
-    set_mode("classification")
+View(head(league_train))
+league_recipe <- league_train %>% 
+    select(win, ends_with("_Blue") | ends_with("_Red")) %>%
+    recipe(win ~ .,) %>%
+        step_dummy(all_nominal_predictors())
+
+league_recipe
 ```
+
+
+```{r}
+
+log_reg <- logistic_reg() %>%
+    set_engine("glm") %>%
+    set_mode("classification")
+
+log_workflow <- workflow() %>%
+    add_model(log_reg) %>%
+    add_recipe(league_recipe)
+
+
+log_fit <- fit(log_workflow, league_train)
+log_fit %>%
+    tidy()
+
+# predict(log_fit, new_data = league_testing, type = "prob")
+augment(log_fit, new_data = league_testing) %>%
+    accuracy(truth = win, estimate = .pred_class)
+```
+
+# QDA
+```{r}
+qda_reg <- discrim_linear() %>%
+    set_mode("classfication") %>%
+    set_engine("MASS")
+
+```
+
+
+
