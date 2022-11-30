@@ -52,3 +52,4 @@ rsconnect/
 dataset/
 
 *.csv
+*.RData

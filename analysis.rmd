@@ -20,6 +20,7 @@ library(corrr)
 library(klaR)
 library(vroom)
 library(MASS)
+library(janitor)
 tidymodels_prefer()
 ```
 
@@ -59,34 +60,14 @@ Other variables will not be considered as they cannot be determined during game 
 # league_all_df <- read.csv("dataset/league_data_tail_10k_utf8.csv")
 # league_all_df <- read.csv("dataset/league_data_10k_utf8.csv")
 
-league_all_df <- vroom("dataset/league_data_utf8.csv")
+league_all_df <- clean_names(vroom("dataset/league_data_utf8.csv"))
+
+
 # Drop all the irrelevant columns
 # summoner_names <- unique(league_all_df$summonerId)
 # dim(league_all_df)
 # length((summoner_names))
 ```
-
-```{r}
-# Drop variables
-league_all_df <- league_all_df %>%
-    select(
-        -c(summonerName,
-        puuid,
-        summonerId,
-        ))
-```
-
-Give a list of variables and check for missing data
-```{r}
-# head(league_all_df)
-# sum(is.na(league_all_df))
-names(which(colSums(is.na(league_all_df)) > 0))
-row_with_na <- league_all_df %>% filter(is.na(teamPosition))
-dim(row_with_na)
-# View(row_with_na)
-league_all_df <- league_all_df %>% filter(!is.na(teamPosition))
-```
-
 
 ## Remove invalid games
 Remake can be made under 3 minutes if one or more player is disconnected from the game in the first 1:30 minutes
@@ -95,57 +76,67 @@ Remake can be made under 3 minutes if one or more player is disconnected from th
 - so to be safe, use 5 minutes as boundary
 ```{r}
 league_all_df <- league_all_df %>%
-    filter(timePlayed > 360)
+    filter(time_played > 360)
+
+league_all_df <- league_all_df %>% drop_na()
+
 dim(league_all_df)
 ```
+
+
+
+```{r}
+colnames(league_all_df)
+league_all_df <- league_all_df %>% select(
+    c(
+        no,
+        game_no,
+        korean_time,
+        win,
+        team_id,
+        team_position,
+        champion_name
+    )
+)
+
+
+```
+
 
 ## Conversion and Factor
 Convert local time to the time of the day
 ```{r}
 # Level: Morning (6-12), Afternoon(12-18), Evening(18-24), Midnight(0-6)
 
-
-
 league_all_df <- league_all_df %>%
     mutate(
-        Hour = strptime(league_all_df$KoreanTime, "%Y-%m-%d %H:%M:%S")$hour)
+        hour = strptime(league_all_df$korean_time, "%Y-%m-%d %H:%M:%S")$hour)
 
 
-head(league_all_df$Hour,n = 20)
 league_all_df <- league_all_df %>%
-    mutate(TimeOfTheDay = case_when(
-           between(Hour, 0, 6) ~ "PostMidnight",
-           between(Hour, 7, 12) ~ "Morning",
-           between(Hour, 13, 18) ~ "Afternoon",
-           between(Hour, 18, 24) ~ "Evening"))
+    mutate(time_of_the_day = case_when(
+           between(hour, 0, 6) ~ "PostMidnight",
+           between(hour, 7, 12) ~ "Morning",
+           between(hour, 13, 18) ~ "Afternoon",
+           between(hour, 18, 24) ~ "Evening"))
 
 league_all_df <- league_all_df %>%
     mutate(team = case_when(
-        teamId == "100" ~ "Blue",
-        teamId == "200" ~ "Red",
+        team_id == "100" ~ "Blue",
+        team_id == "200" ~ "Red",
     ))
+
 ```
 
 ```{r, warning=FALSE}
-# league_all_df_factored <- league_all_df %>%
-#     mutate(
-#         across(c(
-#             gameEndedInEarlySurrender,
-#             gameEndedInSurrender,
-#             teamEarlySurrendered),
-#         as.numeric))
-
 league_all_df_factored <- league_all_df %>%
     mutate(
         across(
             c(
                 win,
-                gameEndedInEarlySurrender,
-                gameEndedInSurrender,
-                teamEarlySurrendered,
-                teamPosition,
-                TimeOfTheDay,
-                championName),
+                team_position,
+                time_of_the_day,
+                champion_name),
             as.factor)
     )
 league_all_df_factored <- league_all_df_factored %>% filter(win == "True" | win == "False")
@@ -155,21 +146,17 @@ league_all_df_factored <- league_all_df_factored %>%
     mutate(across(
             c(
                 win,
-                gameEndedInEarlySurrender,
-                gameEndedInSurrender,
-                teamEarlySurrendered
             ),
             ~fct_relevel(., c("True", "False"))))
 
 
-# league_all_df_factored$TimeOfTheDay <- fct_relevel(
-    # league_all_df$TimeOfTheDay,
-    # c("PostMidnight", "Morning", "Afternoon", "Evening"))
+league_all_df_factored$time_of_the_day <- fct_relevel(
+    league_all_df$time_of_the_day,
+    c("PostMidnight", "Morning", "Afternoon", "Evening"))
 
 league_all_df_factored$team <- fct_relevel(league_all_df_factored$team, c("Blue", "Red"))
 
-# head(league_all_df_factored$Hour)
-# head(league_all_df_factored$TimeOfTheDay)
+levels(league_all_df_factored$time_of_the_day)
 ```
 
 ## Explore the distribution
@@ -208,44 +195,123 @@ correlation %>%
 ```
 
 ```{r}
-View(head(league_all_df_factored, n=60))
 # Generate a table of champion compo for each team
 team_compo <- league_all_df_factored %>%
-    select(no, team, teamPosition, championName) %>%
-    pivot_wider(names_from = c(teamPosition, team),
-        values_from = championName,
+    select(no, team, team_position, champion_name) %>%
+    pivot_wider(names_from = c(team_position, team),
+        values_from = champion_name,
     )
 team_compo
-team_compo <- team_compo[,1:11]
+# team_compo <- team_compo[,1:11]
 # Join the compo by no
 league_all_df_factored <-
     left_join(league_all_df_factored, team_compo, by = "no")
 
-league_all_df_factored <- league_all_df_factored %>%
-    drop_na()
 
-dim(league_all_df_factored)
-View(head(league_all_df_factored, n=20))
+league_team <- league_all_df_factored %>% 
+    group_by(no) %>% 
+    filter(row_number() == 1) %>% 
+    ungroup() %>% 
+    select(-c(champion_name)) %>% 
+    clean_names()
+
+vroom_write(league_team, "data/league_team.csv", delim = ",")
+
+
+```
+# Combining with champion stats
+```{r}
+champions <- clean_names(vroom("dataset/champions.csv"))
+
+library(stringr)
+champions <- champions %>% mutate(champion_name = gsub("\\W", "", champion_name))
+
+name1 <- unique(champions$champion_name)
+name2 <- unique(league_all_df_factored$champion_name)
+print(name2[!(name2 %in% name1)])
+
+champions <- champions %>% mutate(champion_name = case_when(
+    champion_name == "LeBlanc" ~ "Leblanc",
+    champion_name == "KaiSa" ~ "Kaisa",
+    champion_name == "BelVeth" ~ "Belveth",
+    champion_name == "RenataGlasc" ~ "Renata",
+    champion_name == "Wukong" ~ "MonkeyKing",
+    champion_name == "KhaZix" ~ "Khazix",
+    champion_name == "NunuWillump" ~ "Nunu",
+    champion_name == "ChoGath" ~ "Chogath",
+    champion_name == "Fiddlesticks" ~ "FiddleSticks",
+    champion_name == "VelKoz" ~ "Velkoz",
+    TRUE ~ champion_name
+    ))
+
+champion_role <- champions %>% 
+    select(c(champion_name, primary_role))
+
+positions <- colnames(league_cut)[-1:-9]
+
+league_team$top_blue <- with(league_team, champion_role$primary_role[match(top_blue, champion_role$champion_name)])
+league_team$jungle_blue <- with(league_team, champion_role$primary_role[match(jungle_blue, champion_role$champion_name)])
+league_team$middle_blue <- with(league_team, champion_role$primary_role[match(middle_blue, champion_role$champion_name)])
+league_team$bottom_blue <- with(league_team, champion_role$primary_role[match(bottom_blue, champion_role$champion_name)])
+league_team$utility_blue <- with(league_team, champion_role$primary_role[match(utility_blue, champion_role$champion_name)])
+league_team$top_red <- with(league_team, champion_role$primary_role[match(top_red, champion_role$champion_name)])
+league_team$jungle_red <- with(league_team, champion_role$primary_role[match(jungle_red, champion_role$champion_name)])
+league_team$middle_red <- with(league_team, champion_role$primary_role[match(middle_red, champion_role$champion_name)])
+league_team$bottom_red <- with(league_team, champion_role$primary_role[match(bottom_red, champion_role$champion_name)])
+league_team$utility_red <- with(league_team, champion_role$primary_role[match(utility_red, champion_role$champion_name)])
+
+league_team <- league_team %>% drop_na()
+```
+
+
+```{r}
+
 ```
 
 # Logistic regression
 ```{r}
-df_split <- initial_split(league_all_df_factored, prop = 0.5, strata = win)
-league_train <- training(df_split)
+df_split <- initial_split(league_team, prop = 0.8, strata = win)
+league_training <- training(df_split)
 league_testing <- testing(df_split)
-
 ```
 
 ```{r}
-View(head(league_train))
-league_recipe <- league_train %>% 
-    select(win, ends_with("_Blue") | ends_with("_Red")) %>% 
+league_recipe <- league_training %>% 
+    select(win, ends_with("_blue") | ends_with("_red")) %>%
     recipe(win ~ .,) %>%
-        # step_other(all_nominal_predictors(), threshold = .1)
-        step_dummy_multi_choice(all_nominal_predictors(), threshold = 50)
-view(league_recipe)
+        step_dummy(contains("red")) %>% 
+        step_dummy(contains("blue"))
+        # step_interact(terms = ~ starts_with("top"):starts_with("top")) %>% 
+        # step_interact(terms = ~ starts_with("jungle"):starts_with("jungle")) %>% 
+        # step_interact(terms = ~ starts_with("middle"):starts_with("middle")) %>% 
+        # step_interact(terms = ~ starts_with("bottom"):starts_with("bottom")) %>% 
+        # step_interact(terms = ~ starts_with("utility"):starts_with("utility"))
+
+league_recipe
+
 league_recipe %>% 
     prep() %>% juice()
+```
+
+```{r}
+# df <- league_training %>% 
+#     select(c("top_blue", "top_red", "jungle_blue", "jungle_red", "middle_blue", "middle_red", "bottom_blue", "bottom_red", "utility_blue", "utility_red"))
+# 
+# df[sapply(df, is.character)] <- lapply(df[sapply(df, is.character)], as.factor)
+# 
+# 
+# all_combos <- t(combn(names(df),2))
+# all_chis <- apply(all_combos, 1, \(x) stats::chisq.test(table(df[x])))
+# 
+# lbls <- paste0(all_combos[,1],"_",all_combos[,2])
+# names(all_chis) <- lbls
+
+# all_chis
+```
+
+```{r}
+league_folded <- league_team %>% 
+    vfold_cv(v = 5, strata = win)
 ```
 
 
@@ -260,9 +326,9 @@ log_workflow <- workflow() %>%
     add_recipe(league_recipe)
 
 
-log_fit <- fit(log_workflow, league_train)
-log_fit %>%
-    tidy()
+log_fit <- fit_resamples(log_workflow, league_folded)
+
+collect_metrics(log_fit)
 
 # predict(log_fit, new_data = league_testing, type = "prob")
 augment(log_fit, new_data = league_testing) %>%
@@ -272,9 +338,21 @@ augment(log_fit, new_data = league_testing) %>%
 # QDA
 ```{r}
 qda_reg <- discrim_linear() %>%
-    set_mode("classfication") %>%
+    set_mode("classification") %>%
     set_engine("MASS")
 
+qda_workflow <- workflow() %>% 
+    add_model(qda_reg) %>%
+    add_recipe(league_recipe)
+
+qda_fit <- qda_workflow %>% 
+    fit(league_training)
+
+predict(qda_fit, league_testing[1:10,])
+View(league_testing[1:10,])
+
+augment(log_fit, new_data = league_testing) %>%
+    accuracy(truth = win, estimate = .pred_class)
 ```
 
 
