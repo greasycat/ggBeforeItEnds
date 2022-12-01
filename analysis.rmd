@@ -57,106 +57,107 @@ Other variables will not be considered as they cannot be determined during game 
 
 ## Loading the dataset
 ```{r}
-# league_all_df <- read.csv("dataset/league_data_tail_10k_utf8.csv")
-# league_all_df <- read.csv("dataset/league_data_10k_utf8.csv")
 
-league_all_df <- clean_names(vroom("dataset/league_data_utf8.csv"))
+league_all_df <- clean_names(vroom("dataset/league_data.csv"))
+
+colnames(league_all_df)
+
+# Check for problems with vroom function
+problematic_row <- vroom::problems(league_all_df)$row
+
+# Remove row 720002
+league_all_df <- league_all_df[-problematic_row,]
 
 
-# Drop all the irrelevant columns
-# summoner_names <- unique(league_all_df$summonerId)
-# dim(league_all_df)
-# length((summoner_names))
 ```
 
-## Remove invalid games
-Remake can be made under 3 minutes if one or more player is disconnected from the game in the first 1:30 minutes
-- these game will not provide meaningful information to the model
-- however, the game can still run for a period of time after remake voting is passed
-- so to be safe, use 5 minutes as boundary
 ```{r}
+# Drop variables that are not needed
 league_all_df <- league_all_df %>%
-    filter(time_played > 360)
+    select(
+        -c(summoner_name,
+        puuid,
+        summoner_id,
+        ))
+```
 
-league_all_df <- league_all_df %>% drop_na()
+Give a list of variables and check for missing data
+```{r}
+# Get columns with na values
+na_columns <- names(which(colSums(is.na(league_all_df)) > 0))
+print(na_columns)
+
+# Loop through the columns and filter out not na rows
+for (col in na_columns) {
+    league_all_df <- league_all_df %>%
+        filter(!is.na({{col}}))
+}
 
 dim(league_all_df)
 ```
 
 
 
+## Remove invalid games
+Remake can be made under 3 minutes if one or more player is disconnected from the game in the first 1:30 minutes
+- these game will not provide meaningful information to the model
+- however, the game can still run for a period of time after remake voting is passed
+- so to be safe, use 5 minutes as boundary
+
+
 ```{r}
-colnames(league_all_df)
-league_all_df <- league_all_df %>% select(
-    c(
-        no,
-        game_no,
-        korean_time,
-        win,
-        team_id,
-        team_position,
-        champion_name
-    )
-)
-
-
+league_all_df <- league_all_df %>%
+    filter(time_played > 360)
+dim(league_all_df)
 ```
-
 
 ## Conversion and Factor
 Convert local time to the time of the day
 ```{r}
-# Level: Morning (6-12), Afternoon(12-18), Evening(18-24), Midnight(0-6)
-
+# Set 7 as the morning time
 league_all_df <- league_all_df %>%
     mutate(
-        hour = strptime(league_all_df$korean_time, "%Y-%m-%d %H:%M:%S")$hour)
+        hour = strptime(league_all_df$KoreanTime, "%Y-%m-%d %H:%M:%S")$hour - 7)
 
-
-league_all_df <- league_all_df %>%
-    mutate(time_of_the_day = case_when(
-           between(hour, 0, 6) ~ "PostMidnight",
-           between(hour, 7, 12) ~ "Morning",
-           between(hour, 13, 18) ~ "Afternoon",
-           between(hour, 18, 24) ~ "Evening"))
+head(league_all_df$hour)
 
 league_all_df <- league_all_df %>%
     mutate(team = case_when(
-        team_id == "100" ~ "Blue",
-        team_id == "200" ~ "Red",
+        teamId == "100" ~ "blue",
+        teamId == "200" ~ "red",
     ))
-
 ```
 
-```{r, warning=FALSE}
+```{r}
 league_all_df_factored <- league_all_df %>%
     mutate(
         across(
             c(
                 win,
-                team_position,
-                time_of_the_day,
-                champion_name),
+                gameEndedInEarlySurrender,
+                gameEndedInSurrender,
+                teamEarlySurrendered,
+                teamPosition,
+                championName),
             as.factor)
     )
-league_all_df_factored <- league_all_df_factored %>% filter(win == "True" | win == "False")
-View(head(league_all_df_factored))
+levels(league_all_df_factored$win)
 
 league_all_df_factored <- league_all_df_factored %>%
     mutate(across(
             c(
                 win,
+                gameEndedInEarlySurrender,
+                gameEndedInSurrender,
+                teamEarlySurrendered
             ),
-            ~fct_relevel(., c("True", "False"))))
+            ~fct_relevel(., c("TRUE", "FALSE"))))
 
 
-league_all_df_factored$time_of_the_day <- fct_relevel(
-    league_all_df$time_of_the_day,
-    c("PostMidnight", "Morning", "Afternoon", "Evening"))
+league_all_df_factored$team <- fct_relevel(league_all_df$team, c("blue", "red"))
 
-league_all_df_factored$team <- fct_relevel(league_all_df_factored$team, c("Blue", "Red"))
-
-levels(league_all_df_factored$time_of_the_day)
+levels(league_all_df_factored$team)
+levels(league_all_df_factored$teamPosition)
 ```
 
 ## Explore the distribution
@@ -195,19 +196,23 @@ correlation %>%
 ```
 
 ```{r}
+View(head(league_all_df_factored, n=60))
 # Generate a table of champion compo for each team
 team_compo <- league_all_df_factored %>%
-    select(no, team, team_position, champion_name) %>%
-    pivot_wider(names_from = c(team_position, team),
-        values_from = champion_name,
+    select(no, team, teamPosition, championName) %>%
+    pivot_wider(names_from = c(teamPosition, team),
+        values_from = championName,
     )
 team_compo
-# team_compo <- team_compo[,1:11]
 # Join the compo by no
 league_all_df_factored <-
     left_join(league_all_df_factored, team_compo, by = "no")
 
+league_all_df_factored <- league_all_df_factored %>%
+    drop_na()
 
+dim(league_all_df_factored)
+View(head(league_all_df_factored, n=60))
 league_team <- league_all_df_factored %>% 
     group_by(no) %>% 
     filter(row_number() == 1) %>% 
@@ -215,7 +220,7 @@ league_team <- league_all_df_factored %>%
     select(-c(champion_name)) %>% 
     clean_names()
 
-vroom_write(league_team, "data/league_team.csv", delim = ",")
+vroom_write(league_team, "dataset/league_team.csv", delim = ",")
 
 
 ```
@@ -354,6 +359,5 @@ View(league_testing[1:10,])
 augment(log_fit, new_data = league_testing) %>%
     accuracy(truth = win, estimate = .pred_class)
 ```
-
 
 
