@@ -1,0 +1,3 @@
+champions.csv https://www.kaggle.com/datasets/tengrihan/league-of-legends-champions-stats
+league_data_utf8.csv https://www.kaggle.com/datasets/junhachoi/all-ranked-solo-games-on-kr-server-24-hours
+league_team.csv generated using the league_data_utf8.csv
