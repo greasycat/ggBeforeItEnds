@@ -1,0 +1,173 @@
+no
+Number of each participant entry. 10 participant entries for each game.
+
+gameNo
+Unique game ID.
+
+playerNo
+Player number (0-9). This was assigned by me, not Riot API.
+
+CreationTime
+Datetime64[ns] Creation time in GMT (+0)
+
+KoreanTime
+Datetime64[ns, tz] Creation time in KST (+9:00)
+
+participantId
+In-game Participant ID. Riot assigns values 1 through 10.
+
+teamId
+100(blue), 200(red)
+
+summonerName
+Summoner Name. Encoding= CP949 (Windows 949)
+
+gameEndedInEarlySurrender
+boolean DId the game end in surrender before 20 minutes Y/N
+
+gameEndedInSurrender
+boolean
+
+teamEarlySurrendered
+boolean Did your team surrender before 20 minutes?
+
+win
+boolean
+
+teamPosition
+Not always accurate. From Riot: "Both individualPosition and teamPosition are computed by the game server and are different versions of the most likely position played by a player. The individualPosition is the best guess for which position the player actually played in isolation of anything else. The teamPosition is the best guess for which position the player actually played if we add the constraint that each team must have one top player, one jungle, one middle, etc. Generally the recommendation is to use the teamPosition field over the individualPosition field."
+
+kills
+K
+
+deaths
+D
+
+assists
+A
+
+objectivesStolen
+Dragon, Baron, Rift Herald stolen
+
+visionScore
+In-game vision score
+
+puuid
+encrypted puuid, encryption will vary with API key
+
+summonerId
+encrypted summonerId, encryption will vary with API key
+
+baronKills
+player got kill on baron
+
+bountyLevel
+bounty level
+
+champLevel
+champ level
+
+championName
+champion Name
+
+damageDealtToBuildings
+Damage dealt to buildings
+
+damageDealtToObjectives
+Damage dealt to buildings+ epic monsters
+
+detectorWardsPlaced
+Pink wards+ fiddle trinket
+
+doubleKills
+double kills
+
+dragonKills
+player got kill on dragon
+
+firstBloodAssist
+contributed to first blood
+
+firstBloodKill
+player got first blood
+
+firstTowerAssist
+contributed to first tower destruction
+
+firstTowerKill
+got kill on first tower
+
+goldEarned
+total gold earned
+
+inhibitorKills
+got kill on inhibitor
+
+inhibitorTakedowns
+contributed to inhibitor destruction
+
+inhibitorsLost
+team lost inhibitor
+
+killingSprees
+number of killing sprees
+
+largestKillingSpree
+largest killing spree
+
+largestMultiKill
+largetst multikill
+
+longestTimeSpentLiving
+longest time spent alive
+
+neutralMinionsKilled
+jungle monsters killed
+
+objectivesStolenAssists
+contributed to stolen objectives (can include opposing team)
+
+pentaKills
+pentakills
+
+quadraKills
+quadra kills
+
+timeCCingOthers
+seconds Time spent CCing others (may or may not include friendly team)
+
+timePlayed
+time played in seconds. Same as GameDuration (not provided here)
+
+totalDamageDealt
+total damage dealt
+
+totalDamageDealtToChampions
+total damage dealt to champions
+
+totalDamageTaken
+total damage taken
+
+totalHeal
+total heal
+
+totalHealsOnTeammates
+total heal on teammates
+
+totalMinionsKilled
+total minions killed
+
+totalTimeCCDealt
+seconds total time enemies spent CC'd
+
+totalTimeSpentDead
+total time spent dead
+
+totalUnitsHealed
+total units healed
+
+tripleKills
+triple kills
+
+unrealKills
+unreal kills

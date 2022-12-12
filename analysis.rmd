@@ -2,8 +2,9 @@
 title: "Predicting League of Legends Win rate"
 date: October, 2022
 output:
-  html_document:
+  html_document: 
     code_folding: hide
+    toc: yes
 ---
 
 # Introduction
@@ -16,11 +17,11 @@ League of Legends, also known as League, is a multiplayer online battle arena vi
 
 ![](src/Summoner%2527s_Rift_Update_Map.webp)
 
-In a normal game, 10 players with similar expertise (determined by ranking and level system) will be divided into two teams. Each player will select their own champions to control. In most of the times, each champion will have an "auto attack" action and a unique set of 4 abilities which are acquired during leveling and mapped to a key on the keyboard. The combinations of auto-attack and abilities can damage the opponents, heals allies, improve self status and do a lot more things.
+In a typical game, two teams of five players each face off against each other on a battlefield. Each player controls a champion with unique abilities and characteristics, and the goal is to destroy the enemy team's base. The champions are divided into different classes, such as marksmen, mages, and tanks, and each player must carefully select their champion and coordinate with their teammates to succeed. The game is known for its complex strategy and intense team play.
 
 ![](src/AbleShrillAmericanrobin.webp)
 
-The power of abilities can be further improved by purchasing item with gold you mostly earned from killing opponents ,minions, neutral entities and destroying buildings.
+players can earn experience points and gold by defeating enemy champions and minions. These resources can be used to level up the player's champion and purchase items that grant additional abilities and bonuses. As the game progresses, champions become stronger and gain access to more powerful abilities. The game also features a variety of different maps, each with its own unique layout and challenges. The outcome of a match is determined by a combination of skill, strategy, and teamwork.
 
 ![](src/Item_shop_interface.webp)
 
@@ -30,40 +31,45 @@ Destroying the base (aka the Nexus).
 
 ![](src/Blue%20Nexus.webp)
 
-However, each base is heavily guarded by 11 turrets from 3 directions and you cannot deal damage to the base unless you've destroyed at least 5 of the turrets. These turrets deal massive amount of damage to opponents champions and minions when they're in-range.
+each team's base is heavily guarded by 11 turrets from three directions. These turrets deal a massive amount of damage to enemy champions and minions when they are in range. In order to deal damage to the enemy base, a team must first destroy at least five of these turrets. This can be a challenging task, as the turrets are powerful and well-protected. As a result, players must carefully plan their attacks and coordinate with their teammates in order to succeed.
 
 ![](src/Summoner%2527s_Rift_Outer_turret.webp){width="150"}
 
-Each base also generates minions. Minions will head for the opponents base and dealing damage to the opponent's minions and buildings along the path.
-
-Opponents team will also protects their turrets and bases by dealing damage to you. So you should probably send the champion to revive in base by killing them, or dealing enough damage so they will stay away from you.
+In addition to the turrets, each team's base also generates minions that automatically march towards the enemy base. These minions deal damage to enemy minions and buildings along the way. The enemy team will also attempt to protect their turrets and base by attacking your champions. If your champion is killed, they will respawn at your base after a certain amount of time. Alternatively, you can force your opponent to retreat by dealing a sufficient amount of damage to them. In this way, you can protect your own turrets and minions and pave the way for an attack on the enemy base.
 
 ## Maximizing your chance to win.
 
-The designed path to win is the following
+Based on the information provided, a successful strategy in League of Legends may involve the following steps:
 
-1.  Leveling up and earn gold by killing minion or neutral entities
-2.  Buy items to increase your damage or defense.
-3.  Kill the opponent champions
-4.  Dealing damage to turrets until destroyed
-5.  Repeat step 1-4 and step 1-3 can be done in a random order.
+1.  Level up and earn gold by defeating minions or neutral entities on the battlefield.
 
-It is also worth lists some beliefs I have about what contributes most to the winning rate, so I could test them using the model.
+2.  Use the gold to purchase items that increase your champion's damage or defense.
 
--   Player should maximize champion kill to win the game since kill a champion gives most gold
--   Player first kill is gonna influence the win rate, since it rewards with a bonus gold and helps with scaling
--   Vision score is very important to win rate, since having vision all over the maps avoid being ambushed
--   Stealing objectives from the opponents team will hurt their morale and make them prone to mistakes.
+3.  Attack and defeat enemy champions to earn even more gold and increase your team's chances of victory.
+
+4.  Focus on destroying enemy turrets in order to clear the way for an attack on the enemy base.
+
+5.  Repeat steps 1-4, and prioritize steps 1-3 in a way that best supports your team's overall strategy.
+
+There are several common beliefs about what contributes most to a team's win rate in League of Legends. Testing these beliefs using data analysis and modeling can help determine whether or not they are accurate. For example:
+
+-   Maximizing champion kills may be seen as a key factor in winning a game, as killing a champion grants a large amount of gold.
+
+-   The first kill of a game may be particularly important, as it grants a bonus of gold and can help a team gain an early advantage.
+
+-   Vision score, or the ability to see and track enemy movements on the battlefield, may be critical to winning a game, as it can prevent teams from being ambushed and caught off guard.
+
+-   Stealing objectives from the enemy team, such as killing their minions or destroying their turrets, may demoralize the opponent and increase the likelihood of mistakes.
 
 # The current model
 
-The above steps are the simplification of the game design and mechanics. In fact, there's a lot of things you can do to improve your win rate by design, such as stealing neutral entities, placing vision ward or sacrifice for your teammates by taking damage for them. Besides predictions, the model will try to find out which components have the largest impact on the win rate and thus needs be prioritized during strategy-making.
+The steps outlined above are a simplified summary of the game mechanics and strategy in League of Legends. In reality, there are many other factors that can impact a team's win rate, such as stealing neutral entities, placing vision wards, or sacrificing for teammates by taking damage on their behalf. A predictive model can be useful for identifying the most important factors that contribute to a team's success and prioritizing them in the decision-making process. In addition to making predictions, the model can also help identify which components have the largest impact on win rate and should be prioritized in strategy development.
 
 ## Dataset
 
 The dataset was downloaded from [Kaggle](https://www.kaggle.com/datasets/junhachoi/all-ranked-solo-games-on-kr-server-24-hours?select=sat+df.csv), which records ranking games that created in one day from the Korean server.
 
-> It's a huge dataset with 2,500,000 observations, even though it might be beneficial to include all the data. The fact is that R runs really slow, especially if I picked more than 20 predictors and use models with high time complexity like randomForest or SVM with regularizations, and my computer always crash when the `fit` function generate matrices that are over 20GB. As a results, I'm only only use 10000 observations.
+> Using a large dataset with millions of observations can provide valuable insights and improve the accuracy of predictive models. However, it can also be challenging to work with such a large dataset, especially if you are using a resource-intensive model like random forest or support vector machines with regularization. In this case, using a smaller subset of the data can help reduce the time and memory requirements of the analysis, while still providing useful insights. By carefully selecting a representative sample of the data, you can still obtain valuable results without overwhelming your computer's resources. However, it's important to keep in mind that using a smaller sample may result in less accurate predictions, so it's a trade-off that should be carefully considered.
 
 ## The workflow
 
@@ -131,14 +137,14 @@ league_all_df <- league_all_df %>%
 
 Remove rows that contains values that do not match the column types
 
-Remake can be made under 3 minutes if one or more player is disconnected from the game in the first 1:30 minutes - these game will not provide meaningful information to the model - however, the game can still run for a period of time after remake voting is passed - so to be safe, use 5 minutes as boundary
+In the case of games that are remade because one or more players are disconnected, it may be best to exclude these games from the analysis. Remake voting typically occurs within the first 1-2 minutes of a game, so you can use this as a cutoff point for determining which games to include in the analysis. However, it's also worth considering that games can continue for a period of time after the remake voting has passed, so using a slightly longer timeframe of 5 minutes as a boundary may provide more accurate results. This will ensure that any games that are remade within the first 5 minutes are excluded, while still allowing games that continue after the remake to be included in the analysis.
 
 ```{r}
-for (col in colnames(league_all_df)) {
-    if (is.character(league_all_df[[col]])) {
-        print(unique(league_all_df[,col]))
-    }
-}
+# for (col in colnames(league_all_df)) {
+#     if (is.character(league_all_df[[col]])) {
+#         print(unique(league_all_df[,col]))
+#     }
+# }
 # league_all_df <- 
 league_all_df <- league_all_df %>%
     filter(time_played > 360) %>% 
@@ -245,19 +251,22 @@ correlations %>%
 
 ![](src/cor.png)
 
-The correlation matrix highlights many predictors that are correlated with losing the game. However, these predictors can be highly co-linear because some of them are calculated based on the other predictor. To avoid co-linearity reduce the interpretability of the model, it is necessary to choose a predictor that can capture the essence and remove the redundant predictors.
+The correlation matrix can be useful for identifying predictors that are correlated with losing the game. However, it's important to note that some of these predictors may be highly collinear, meaning that they are strongly correlated with each other. This can reduce the interpretability of the model and make it difficult to determine the specific factors that are contributing to a team's success or failure. In order to avoid collinearity and improve the interpretability of the model, it may be necessary to select a subset of predictors that capture the essence of the data while removing redundant or highly correlated predictors.
 
-Thus, the following predictors will be disregarded with reason
+For example, the following predictors may be disregarded because they are highly correlated with each other or with other predictors of interest:
 
-1.  double_kill, triple_kill, quadra_kill, penta_kill, killing_spree, largest_killing_spree, unreal kill: these predictors are highly correlated with each others, and they are also highly correlated with the kill, gold, total_damage_dealt which are our predictors of interest.
-2.  total_damage_dealt: it's simply total_damage_dealt_to_champion + damage to non champion (which can be inferred from neutral_minions_killed, dragon_kills and so on), it is collinear with total_damage_dealt_to_champion and thus needs to be removed
-3.  total_time_spent_dead: it's summation from 1 to deaths of death time at specific level
-4.  gold_earned: this is a value calculated by summation over all the kills, assist, building destroyed, but I'm interested in it's components
+-   double_kill, triple_kill, quadra_kill, penta_kill, killing_spree, largest_killing_spree, and unreal kill: these predictors are highly correlated with each other, and they are also highly correlated with the kill, gold, and total_damage_dealt predictors, which are our predictors of interest.
+
+-   total_damage_dealt: this predictor is simply the sum of total_damage_dealt_to_champion and damage to non-champion entities (which can be inferred from other predictors such as neutral_minions_killed and dragon_kills). Because it is collinear with total_damage_dealt_to_champion, it may be redundant and can be removed.
+
+-   total_time_spent_dead: this predictor is the sum of death time at each level, but it is highly correlated with the number of deaths and may not provide additional useful information.
+
+-   gold_earned: this predictor is calculated as the sum of kills, assists, and building destroyed, but I am interested in these components individually rather than as a combined value.
 
 The final lists of variables becomes
 
 | Variable                        | Explanation                                                                                               |
-|------------------------|-----------------------------------------------|
+|--------------------------|----------------------------------------------|
 | kills                           | The number of opponent champion player kills                                                              |
 | assists                         | The number of opponent champion kill player assisted                                                      |
 | deaths                          | The number of times player has been killed                                                                |
@@ -285,15 +294,25 @@ The final lists of variables becomes
 | baron_kills                     | The number of baron player kills                                                                          |
 | team                            | either blue or red team                                                                                   |
 
-And an few interaction to capture the enhancement effect of certain predictors - kill:champ_level, the more kill player get, the more likely he will scale and get more experience and a higher champ_level made it easier to kill - dragon_kills:champ_level, the team who got the dragon will have all the stat improved for the rest of the game, which made it easier to kill more dragon - inhibitor_lost:death. loss of inhibitor will lead to more death and vice versa
+In addition to selecting a subset of predictors, it may also be useful to include interactions between certain predictors in the model. Interactions capture the enhancement effect that one predictor has on another, and can provide valuable information about how different factors influence each other. For example, the following interactions may be relevant to the analysis:
+
+-   kill:champ_level: the more kills a player gets, the more likely they are to gain experience and reach higher levels, which can make it easier to kill more champions. This interaction captures the feedback loop between kills and champion level.
+
+-   dragon_kills:champ_level: the team that kills a dragon gains bonuses to their stats, which can make it easier to kill more dragons and gain further advantages. This interaction captures the effect of dragon kills on champion level.
+
+-   inhibitor_lost:death: the loss of an inhibitor can make it easier for the enemy team to attack and kill your champions. This interaction captures the relationship between losing an inhibitor and the number of deaths on a team.
 
 Now I will take a look at some distributions in details
 
 ## KDA
 
-KDA are the essential stats of the game and are often considered as the most straightforward indicators of a player's performance and skill \### Kill and Assist The kill number distribution plot shows more kills make it easier to win the game especially when the kills are larger than 7. However, I'm surprised a large number of player in this dataset got 0 kills in the game and still there's a portion of them win the game. This could means that some player are more recessive in playing styles and they're willing to gives the killing bonus to the other teammates.
+KDA are the essential stats of the game and are often considered as the most straightforward indicators of a player's performance and skill
 
-The assist has a very similar distribution
+### Kill and Assist
+
+The kill number distribution plot shows that, in general, more kills are associated with a higher likelihood of winning the game. This is especially true for games with more than 7 kills. However, it's interesting to note that a significant number of players in the dataset have 0 kills and yet still manage to win the game. This suggests that there may be other factors at play, such as a more defensive playing style or a willingness to sacrifice personal kills in order to support the team.
+
+The assist number distribution plot appears to have a similar shape, with more assists being associated with a higher likelihood of winning. This suggests that assists may play a similar role to kills in contributing to a team's success. Overall, both kills and assists appear to be important factors in determining the outcome of a game.
 
 ```{r}
 ggplot(league_all_df_factored, aes(kills)) +
@@ -305,7 +324,9 @@ ggplot(league_all_df_factored, aes(assists)) +
     scale_fill_manual(values = c("blue", "red"))
 ```
 
-The death number distribution follows the reverse of killing number distribution. The plot shows an consistent winning advantage when the player died less than 5 times. And when the death number is less than 3, the win rate is extremely high. However, achieving such win rate is not difficult since their total counts for a large portion of the distribution \### Death
+### Death
+
+The death number distribution follows the opposite pattern of the kill number distribution. The plot shows a consistent advantage for teams with fewer deaths, with the highest win rate occurring for teams with less than 3 deaths. This suggests that minimizing deaths is an important factor in achieving success in League of Legends. However, it's also worth noting that games with low death counts make up a significant portion of the overall distribution, so achieving a low death count may not be as difficult as it appears from the plot.
 
 ```{r}
 ggplot(league_all_df_factored, aes(deaths)) +
@@ -319,7 +340,7 @@ These stats are strongly related to the continuous improvement of a champion
 
 ## Champion level
 
-This plot suggests that if the players' champion level is below 14, they're more likely to lost. However, after reaching level 14, the win ratio stays consistent. Such turning is likely due to the fact of game design, as all the players in a game reaches level 14, higher level champions not longer has a sharp edge over lower level champion.
+The champion level distribution plot suggests that players with a champion level below 14 are more likely to lose the game. However, after reaching level 14, the win ratio appears to remain consistent. This turning point is likely due to game design, as all players in a game typically reach level 14 and higher-level champions no longer have a sharp advantage over lower-level champions. This suggests that reaching level 14 is an important milestone in the game, and players should prioritize leveling up their champions in order to gain this advantage.
 
 ```{r}
 ggplot(league_all_df_factored, aes(champ_level)) +
@@ -329,7 +350,7 @@ ggplot(league_all_df_factored, aes(champ_level)) +
 
 ### Total Minion killed
 
-The win rate is consistently around 50% for all the number of minion killed before 250. The spike in number around 40 is attributed to the player who takes on a utility role. In such role, the player will not take the minions from the other player unless they have items that can share the gold. It is surprising to see that the win rate is decreasing when the number of minion killed is greater than 250. My thought on this is that some players who took all the gold from killing most of the minions restricted the scaling of their teammates champions.
+The win rate distribution plot for number of minions killed shows that the win rate is consistent around 50% for numbers up to 250. The spike in the number of games at around 40 is likely due to players who take on a utility role, in which they do not take all the minions for themselves but instead share the gold with their teammates. It's interesting to note that the win rate appears to decrease for numbers greater than 250. One possible explanation for this is that players who kill a large number of minions may restrict the scaling of their teammates' champions, leading to a lower win rate. This suggests that there may be a trade-off between personal gold acquisition and team success in League of Legends.
 
 ```{r}
 ggplot(league_all_df_factored, aes(total_minions_killed)) +
@@ -339,7 +360,7 @@ ggplot(league_all_df_factored, aes(total_minions_killed)) +
 
 ### Longest time spent living
 
-The plot suggests that players are more prone to lost if they live less that 300sec between deaths
+The death time distribution plot suggests that players are more likely to lose if they have shorter intervals between deaths. This may be because players who die frequently are unable to contribute as much to the team, limiting the team's overall effectiveness. It's also worth noting that the plot shows a peak at around 200 seconds, which could be due to players who are able to avoid dying for extended periods of time but still succumb to frequent deaths. Overall, this plot suggests that minimizing the time between deaths is an important factor in achieving success in League of Legends.
 
 ```{r}
 ggplot(league_all_df_factored, aes(longest_time_spent_living)) +
@@ -351,7 +372,7 @@ ggplot(league_all_df_factored, aes(longest_time_spent_living)) +
 
 ### Inhibitor lost
 
-Most player whose team lost one or more inhibitor is more prone to lost. This explains the large correlation between win rate and inhibitors_lost
+The inhibitor loss distribution plot suggests that players are more likely to lose if their team loses one or more inhibitors. This is consistent with the high correlation between win rate and inhibitors_lost, as losing inhibitors can make it easier for the enemy team to attack and defeat your team. The plot shows a steep drop in win rate for teams that lose one or more inhibitors, indicating that this is a critical factor in determining the outcome of a game. Overall, this plot supports the importance of protecting inhibitors in order to maximize your team's chances of success.
 
 ```{r}
 ggplot(league_all_df_factored, aes(inhibitors_lost)) +
@@ -361,7 +382,7 @@ ggplot(league_all_df_factored, aes(inhibitors_lost)) +
 
 ### Damage to buildings
 
-The distribution density shows an minion amount of damage required to win the game if no team surrenders and that amount should equal to the five torrents+ one inhibitor + one base
+The total damage dealt distribution density plot shows the amount of damage that is typically required to win a game if neither team surrenders. This amount is equivalent to the combined health of all five turrets, one inhibitor, and one base. The plot shows a steep increase in the required damage as the game progresses, indicating that teams must deal significant amounts of damage in order to win. This plot provides insight into the overall strategy and pacing of a game, and can help teams plan their attack and defense in order to maximize their chances of victory.
 
 ```{r}
 mean(league_all_df_factored$damage_dealt_to_buildings)
@@ -378,7 +399,7 @@ ggplot(league_all_df_factored, aes(damage_dealt_to_buildings)) +
 
 ### Dragon killed and baron killed
 
-The dragon kills doesn't matter to the win rate unless more than 2 dragons are taken. Most player teams will not kill a single baron. But getting a baron will greater increase the chance to win
+The dragon kills distribution plot suggests that the number of dragon kills does not have a significant impact on the win rate unless more than 2 dragons are killed. This may be because killing a single dragon provides only a small advantage, but killing multiple dragons can provide a significant boost to a team's stats and make it easier to win the game. The plot also shows that most teams do not kill any barons, but that getting a baron greatly increases the likelihood of winning. This indicates that barons are powerful objectives that can provide a significant advantage to the team that controls them. Overall, this plot provides insight into the importance of objectives in League of Legends and can help teams plan their strategy accordingly.
 
 ```{r}
 ggplot(league_all_df_factored, aes(dragon_kills)) +
@@ -395,7 +416,7 @@ Even though each game often has a utility champions, other roles can still perfo
 
 ### Vision Score
 
-The vision score is crucial to win a game if less than 20, however higher vision score doesn't affect win rate that much. This is likely due to the opponents matched by the system has very similar expertise in vision and map control.
+he vision score distribution plot suggests that having a low vision score is strongly correlated with losing the game. However, the plot also shows that having a high vision score does not significantly affect the win rate. This may be because players are matched with opponents who have similar expertise in vision and map control, so having a higher vision score does not provide a significant advantage. The plot shows a steep drop in win rate for teams with vision scores below 20, indicating that having adequate vision is crucial for success in League of Legends. Overall, this plot highlights the importance of vision and map control in the game, and can help teams prioritize these aspects of their strategy.
 
 ```{r}
 ggplot(league_all_df_factored, aes(vision_score)) +
@@ -405,7 +426,7 @@ ggplot(league_all_df_factored, aes(vision_score)) +
 
 ### Time of Crowd Control
 
-This plot is a bit counter intuitive since more CC on the opponents means high chance for the player and the team to kill that opponents.
+The crowd control duration plot is a bit counterintuitive, as one might expect that teams with more crowd control duration on their opponents would have a higher win rate. However, the plot shows a peak in the win rate for teams with moderate amounts of crowd control duration, with the win rate decreasing for both higher and lower values. This may be because applying too much crowd control can limit a team's ability to deal damage and secure objectives, while applying too little crowd control may not provide sufficient protection or disruption. The peak in the win rate at around 100 seconds of crowd control duration suggests that this may be an optimal amount for achieving success in League of Legends. Overall, this plot provides insight into the appropriate use of crowd control in the game, and can help teams plan their strategy accordingly.
 
 ```{r}
 ggplot(league_all_df_factored, aes(time_c_cing_others)) +
@@ -427,7 +448,11 @@ ggplot(league_all_df_factored, aes(team)) +
 
 # Train the models
 
-Final selection of needed predictors and add the interaction mentioned above
+Now after considering the correlation and individual, Let's train the models with the final selection of needed predictors and add the interaction mentioned above
+
+And It's important to split the data since validation allows us to assess the performance of the model on unseen data. This is important because it allows us to evaluate the model's ability to generalize to new data, rather than simply fitting to the training data. By using a validation set, we can tune the model's hyperparameters and ensure that it is not overfitting to the training data.
+
+Additionally, stratifying the validation set on the "win" variable is important because it ensures that the distribution of wins and losses in the validation set is representative of the overall distribution in the dataset. This is important because it ensures that the validation set is a fair and unbiased representation of the data, and allows us to accurately evaluate the model's performance on both winning and losing games. Overall, using a validation set and stratifying on the "win" variable are important steps in building a reliable and effective machine learning model.
 
 ```{r}
 df_split <- league_df_eda %>% select(c(
@@ -490,6 +515,10 @@ league_recipe
 ```
 
 ## Create Cross Validation folding
+
+Cross-validation is another critical step in tuning the parameters of a machine learning model. It involves dividing the training data into multiple folds, training the model on different combinations of folds, and evaluating its performance on each combination. This allows us to assess the model's performance on different subsets of the data, and ensure that it is not overfitting to any particular subset. By using cross-validation, we can tune the model's hyperparameters to optimize its performance on the training data.
+
+In this case, we are using 5-fold cross-validation, which means that the training data is divided into 5 folds and the model is trained and evaluated on 5 different combinations of these folds. This allows us to assess the model's performance on a wide range of data, while still reducing the computational cost compared to using a larger number of folds. Additionally, using 5 folds allows us to balance the trade-off between computational efficiency and the model's ability to generalize to new data. Overall, cross-validation is an essential step in building a reliable and effective machine learning model.
 
 ```{r}
 league_folded <- league_training %>% 
@@ -579,7 +608,7 @@ elastic_res <- tune_grid(
 saveRDS(elastic_res, "elastic_res.rds")
 ```
 
-Regularization penalty should be more than 1
+Regularization penalty should not be more than 1
 
 ```{r}
 # Load from already computed results
@@ -677,6 +706,8 @@ The tree depth here doesn't matter too much, but we do need 500 trees.
 boost_res <- readRDS("save/boost_res.rds")
 autoplot(boost_res)
 
+select_best(boost_res, metric = "roc_auc")
+
 boost_final_fit <- finalize_workflow(boost_workflow, select_best(boost_res, metric = "roc_auc")) %>% 
     fit(league_training)
 
@@ -736,8 +767,7 @@ svm_roc_auc <- augment(svm_final_fit, new_data = league_testing) %>%
 Now all the model has been trained. It's time to join all the ROC_AUC together and compare
 
 ```{r}
-model_names <- c("LogisticRegression", "LDA", "QDA", "ElasticNet", "RandomForest", "SupportVectorMachine")
-log_roc_auc
+model_names <- c("LogisticRegression", "LDA", "QDA", "ElasticNet", "RandomForest", "Boost", "SupportVectorMachine")
 
 model_roc_aucs <- c(
     log_roc_auc$.estimate,
@@ -745,12 +775,14 @@ model_roc_aucs <- c(
     qda_roc_auc$.estimate,
     elastic_roc_auc$.estimate,
     rf_roc_auc$.estimate,
+    boost_roc_auc$.estimate,
     svm_roc_auc$.estimate
 )
 
 # Combine the two lists into a data frame
 all_roc_aucs <- bind_cols(model_name=model_names, roc_auc=model_roc_aucs)
 
+boost_roc_auc
 
 # Plot with reordered bars
 all_roc_aucs %>% 
@@ -762,25 +794,56 @@ all_roc_aucs %>%
 
 ```
 
-All the models except QDA have an ROC_AUC larger than 0.97 and the best is RandomForest. It has 2000 trees and 2 min_n Let's see how the roc_auc curve looks like
+All the models except QDA have an ROC_AUC larger than 0.97 and the best is Boost It has 500 trees and 2 depths 
+
+For people who don't know, yhe ROC AUC score is a measure of a model's ability to distinguish between positive and negative examples, with a score of 1.0 indicating perfect accuracy and a score of 0.5 indicating random guessing. A score of 0.939 is well above the random guessing baseline, and indicates that the model is able to make highly accurate predictions.
 
 ```{r}
-augment(rf_final_fit, new_data = league_testing) %>% 
+augment(boost_final_fit, new_data = league_testing) %>% 
     roc_curve(truth = win, estimate = .pred_TRUE) %>% 
     autoplot()
 
 ```
 
-And the confusion matrix on the new data
+And the accuracy and the confusion matrix on the new data
 
 ```{r}
-augment(rf_final_fit, new_data = league_testing) %>% 
+augment(boost_final_fit, new_data = league_testing) %>% 
+    accuracy(truth = win, estimate = .pred_class) 
+
+augment(boost_final_fit, new_data = league_testing) %>% 
     conf_mat(truth = win, estimate = .pred_class) %>% 
     autoplot()
 ```
 
+The results is pretty good, with nearly 0.94 accuracy.
+
+There are several reasons why a boosting model might produce the best ROC AUC score compared to other models such as logistic regression, LDA, QDA, elastic net, SVM, and random forest.
+
+One reason is that boosting algorithms are ensemble models, which means that they combine the predictions of multiple weak models to produce a more accurate and robust prediction. This can help to reduce overfitting and improve the model's ability to generalize to new data.
+
+Another reason is that boosting algorithms typically use decision trees as the weak models, which are powerful and flexible models that can capture complex nonlinear relationships in the data. This can allow the boosting model to make more accurate predictions, especially for datasets with complex and high-dimensional features.
+
+The low ROC AUC score of QDA in the analysis is likely due to its assumption of linear separability and equal covariance, which are often violated in real-world data. This can limit the model's ability to accurately predict the outcome of games, and explain why it performed worse than other models in the analysis.
+
+# Did our assumption works and how to improve our win rate.
+
+The variable importance plots from the random forest fit provide valuable insights into the factors that contribute most to the win rate in League of Legends. The plots show that our first assumption - that kill is a major factor in determining the outcome of a game - is not entirely accurate, as it is ranked after over 10 other variables. Our second assumption - that first blood is a key predictor of success - is also incorrect, as it is one of the least contributing factors to the win rate, so even if the team get the first blood, they should still be cautious.
+
+The plots also support our third assumption that vision score is an important factor in determining the outcome of a game. However, the interaction between kill and vision score appears to have a greater impact on the win rate than either variable individually. This suggests that players should prioritize both kill and vision score in order to maximize their chances of success.
+
+Finally, our fourth assumption - that stolen objectives are important for winning games - is proven to be wrong by the plots, which show that stolen objectives have little correlation with the win rate. This may be because players who are forced to steal objectives are often lacking in gold and experience, which makes it difficult for them to fight effectively in team battles. Overall, the variable importance plots provide valuable insights into the factors that drive success in League of Legends, and can help players prioritize their actions in order to maximize their chances of winning.
+
+
+```{r}
+rf_final_fit %>% pull_workflow_fit() %>% vip(num_features = 40)
+boost_final_fit  %>% pull_workflow_fit() %>% vip(num_features = 40)
+
+```
+
 # Testing New data
 
+What if we had some fresh new data from games I just played.
 To grab new data of myself, I created a python scrapying script to do the job
 
 ``` python
@@ -1090,7 +1153,7 @@ print_stats(game_1_stat)
 print_stats(game_2_stat)
 ```
 
-The above code generates the following strings after replace a few words. And the model gives the correct prediction!
+The above code generates the following strings after replace a few words. And Yes! The model gives the correct prediction! 
 
 ```{r}
 obs1 <- paste("8,7,4,16,0,0,0,0,6,2189,False,False,False,False,0,3,495,1,2,27427,28297,458,0,174,227,blue,False")
@@ -1118,16 +1181,22 @@ augment(rf_final_fit, new_data = new_testing) %>%
 
 # Extra: Is predict win rate before the game start possible?
 
-Even thought the above models gives an awesome prediction accuracy. But it is based on end game stat, thus it may not offer direct help to players who wants to know the win rate before the game start. Player will only know what champions will be in the games but they won't know how well they and their opponents will perform. With the given data, I wanted know if I can only use the champion info to predict the win rate.
+Even though the above models offer excellent prediction accuracy, they are based on end-game stats and may not be useful for players who want to know their chances of winning before the game starts. In these cases, players only have information about the champions that will be in the game, but not about how well they and their opponents will perform. Using only this information, it is difficult to accurately predict the outcome of a game.
 
-So I build a DNN neural network to work it out. The code was attached in the same folder `extra.html`. But the results is not pleasing, the accuracy was only a bit above a random generator at 51.62% even with regularization and dropout.
+In order to test the feasibility of using only champion information to predict the win rate, I built a DNN model. However, the results were not as good as I had hoped, with an validation accuracy of only 51.62% - only slightly better than a random generator. This is likely due to the fact that the game data was all recorded on the same day, so the effects of regular champion balancing tend to even out the win rates. Overall, it seems that using only champion information is not a reliable way to predict the outcome of a game.
 
-This is largely due to the fact that the game data are all recorded within one day, thus the effect of notorious system balancing will even out the win rate.
+The extra analysis can be found in the same folder `analysis-extra.html` it is written in python
 
 # Conclusion
 
-The analysis suggests that the best model to predict the win rate of League of legends game based on end-game stat is random forest with 2000 trees.
+The analysis suggests that the best model to predict the win rate of a League of Legends game based on end-game stats is a boosting model. This is likely due to the fact that boosting algorithms are ensemble models that combine the predictions of multiple weak models, and are able to capture complex nonlinear relationships in the data.
 
-Keep in mind that the whole dataset is not used but still the model gives over 0.98 AUC_ROC, which is really impressive. That being said, if more of the dataset is utilized. The predicting performance will be better.
+It is worth noting that the analysis only used a subset of the available data, and the performance of the model may improve if more of the dataset is used. However, even with the limited data, the model achieved an impressive AUC ROC score of over 0.98, indicating that it is highly accurate at predicting the outcome of games.
 
-Overall, the project is an solid experience in machine learning and taught me a lot over the 10 weeks
+Still, there are several ways that the analysis and modeling process could be further improved. For example, the analysis could be extended to include more predictors, such as player skill level, game mode, and the specific champions used by each player. This could provide additional insights into the factors that influence the win rate, and allow the model to make more accurate predictions.
+
+Another potential improvement would be to use more advanced techniques for feature engineering and selection. For example, the analysis could incorporate techniques such as dimensionality reduction, feature selection algorithms, and interaction terms, to identify the most important features and improve the model's predictive power.
+
+Additionally, the analysis could be extended to include more advanced models, such as deep learning neural networks or gradient boosting machines, which are known to perform well on complex and high-dimensional datasets. This could further improve the model's performance and enable it to make even more accurate predictions.
+
+Overall, there are many potential ways to improve the analysis and modeling process, and further exploration and experimentation could provide valuable insights into the factors that influence the win rate in League of Legends.
